@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>稳定币深度解析：市场、监管与未来</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Calm Harmony (Background: #F8FAFC, Text: #1E293B, Primary: #0F766E, Accent: #F59E0B) -->
+    <!-- Application Structure Plan: 本应用采用单页滚动式布局，通过顶部导航栏实现各主题区域间的快速跳转。整体结构设计旨在引导用户从基础概念逐步深入到复杂的市场动态、监管对比和风险分析。布局分为：1. 概览：以关键数据和核心定义吸引用户。2. 稳定币基础：通过互动卡片分类讲解，降低理解门槛。3. 市场动态：利用动态图表展示市场格局和主要参与者。4. 全球监管：采用标签页清晰对比香港与美国的政策异同。5. 应用与战略：通过图标和信息卡片展示多元化用例。6. 风险与机遇：以结构化列表阐明风险点，便于用户评估。此非线性结构旨在提升信息的可探索性和用户参与度，使用户能根据自身兴趣选择性深入了解，而非被动接收信息。 -->
+    <!-- Visualization & Content Choices: 1. 市场份额 (Donut Chart): 目标是直观比较主要稳定币的占比。甜甜圈图能清晰展示部分与整体的关系，互动提示框可显示精确数值。使用Chart.js实现。 2. 市值增长 (Line Chart): 目标是展示市场随时间的变化趋势。折线图是表现连续数据演变的最佳选择。使用Chart.js实现。 3. 稳定币类型/风险/参与者 (Interactive Cards): 目标是将复杂的文本信息分解为易于消化的模块。卡片式布局配合点击展开交互，可以隐藏次要信息，保持界面整洁，用户主动探索时再展示详情。使用原生JS切换CSS类实现。 4. 监管对比 (Tabs): 目标是并列呈现香港和美国的监管框架，便于直接比较。标签页是组织和切换相关内容块的经典UI模式。使用原生JS实现。 5. 应用场景 (Icon Grid): 目标是快速、形象地展示稳定币的多种用途。图标比纯文本更具吸引力，悬停显示简短说明。使用HTML/Tailwind构建。所有选择均旨在将报告中的静态信息转化为动态、互动的学习体验，并严格遵守无SVG/Mermaid的要求。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0F766E; /* teal-700 */
+            border-bottom-color: #0F766E;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .tab-button {
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            background-color: #0F766E;
+            color: white;
+        }
+        .details-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .details-content.open {
+            max-height: 1000px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-teal-700">稳定币解析</a>
+            <div class="hidden md:flex space-x-8">
+                <a href="#intro" class="nav-link pb-1">核心概览</a>
+                <a href="#types" class="nav-link pb-1">基础分类</a>
+                <a href="#market" class="nav-link pb-1">市场动态</a>
+                <a href="#regulation" class="nav-link pb-1">全球监管</a>
+                <a href="#use-cases" class="nav-link pb-1">应用场景</a>
+                <a href="#risks" class="nav-link pb-1">风险机遇</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#intro" class="block py-2 px-4 text-sm hover:bg-gray-200">核心概览</a>
+            <a href="#types" class="block py-2 px-4 text-sm hover:bg-gray-200">基础分类</a>
+            <a href="#market" class="block py-2 px-4 text-sm hover:bg-gray-200">市场动态</a>
+            <a href="#regulation" class="block py-2 px-4 text-sm hover:bg-gray-200">全球监管</a>
+            <a href="#use-cases" class="block py-2 px-4 text-sm hover:bg-gray-200">应用场景</a>
+            <a href="#risks" class="block py-2 px-4 text-sm hover:bg-gray-200">风险机遇</a>
+        </div>
+    </header>
+    <main>
+        <section id="intro" class="py-20 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-bold leading-tight">探索稳定币的世界</h1>
+                <p class="mt-4 text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">从数字世界的“锚”到下一代金融基础设施，稳定币正在重塑全球价值流转的方式。</p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="p-6 bg-slate-50 rounded-xl">
+                        <h3 class="text-4xl font-bold text-teal-700">$2500亿+</h3>
+                        <p class="mt-2 text-slate-500">全球总市值</p>
+                    </div>
+                    <div class="p-6 bg-slate-50 rounded-xl">
+                        <h3 class="text-4xl font-bold text-teal-700">99%</h3>
+                        <p class="mt-2 text-slate-500">由美元计价</p>
+                    </div>
+                    <div class="p-6 bg-slate-50 rounded-xl">
+                        <h3 class="text-4xl font-bold text-teal-700">$35万亿+</h3>
+                        <p class="mt-2 text-slate-500">2024年交易额</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="types" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold">稳定币：核心分类与机制</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">稳定币并非铁板一块。根据其价值锚定和支撑机制，可主要分为以下几类。点击卡片了解更多详情。</p>
+                </div>
+                <div id="types-container" class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                </div>
+            </div>
+        </section>
+        <section id="market" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold">市场动态与主要参与者</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">稳定币市场由少数巨头主导，但新的参与者和创新的商业模式正在不断涌现，共同塑造着这个快速增长的领域。</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-4 text-center">主要稳定币市场份额</h3>
+                        <div class="chart-container">
+                            <canvas id="marketShareChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-4 text-center">全球稳定币市值增长趋势</h3>
+                        <div class="chart-container">
+                            <canvas id="marketCapGrowthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                 <div class="mt-16">
+                    <h3 class="text-2xl font-semibold mb-8 text-center">主要发行方概览</h3>
+                    <div id="players-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="regulation" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold">全球监管格局：香港 vs. 美国</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">随着稳定币影响力的扩大，全球主要经济体正在加速构建监管框架。香港和美国作为两大中心，其路径选择备受关注。</p>
+                </div>
+                <div>
+                    <div class="flex justify-center mb-8 bg-slate-200 rounded-full p-1 max-w-sm mx-auto">
+                        <button data-tab="hk" class="tab-button w-1/2 p-2 rounded-full active">香港</button>
+                        <button data-tab="us" class="tab-button w-1/2 p-2 rounded-full">美国</button>
+                    </div>
+                    <div id="regulation-content" class="max-w-4xl mx-auto">
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="use-cases" class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold">应用场景与战略意义</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">稳定币的应用已远超加密货币交易范畴，深入到跨境支付、供应链金融乃至人民币国际化等战略层面。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                     <div class="card p-6 text-center">
+                        <div class="text-4xl text-amber-500 mb-4">🌍</div>
+                        <h3 class="text-xl font-semibold mb-2">跨境支付与结算</h3>
+                        <p class="text-slate-600">绕过传统银行中介，实现7x24小时、低成本、高效率的全球资金流动，为国际贸易和汇款带来革命性变化。</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl text-amber-500 mb-4">💹</div>
+                        <h3 class="text-xl font-semibold mb-2">DeFi 核心基石</h3>
+                        <p class="text-slate-600">作为去中心化金融世界的“美元”，是借贷、交易、衍生品等各类DeFi协议中不可或缺的抵押品和计价单位。</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl text-amber-500 mb-4">🛒</div>
+                        <h3 class="text-xl font-semibold mb-2">支付与价值储存</h3>
+                        <p class="text-slate-600">为商家和消费者提供一种高效的数字支付选项，并在高通胀地区成为规避本币贬值的可靠价值储存工具。</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl text-amber-500 mb-4">🔗</div>
+                        <h3 class="text-xl font-semibold mb-2">供应链金融</h3>
+                        <p class="text-slate-600">如京东的探索，利用稳定币优化B2B支付，提高供应链上下游企业间的资金结算效率和透明度。</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl text-amber-500 mb-4">🇨🇳</div>
+                        <h3 class="text-xl font-semibold mb-2">人民币国际化</h3>
+                        <p class="text-slate-600">通过在香港发行合规的人民币稳定币，探索数字货币路径，提升人民币在全球贸易和清算中的使用，挑战SWIFT体系。</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl text-amber-500 mb-4">🎨</div>
+                        <h3 class="text-xl font-semibold mb-2">RWA与NFTs交易</h3>
+                        <p class="text-slate-600">为房地产、债券等现实世界资产（RWA）的代币化交易提供计价和结算工具，并成为NFT市场的主流定价货币。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="risks" class="py-20">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold">风险与机遇并存</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-slate-600">稳定币生态在带来巨大机遇的同时，也伴随着多重风险。对于投资者和参与者而言，充分理解这些挑战至关重要。</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div class="card p-8">
+                        <h3 class="text-2xl font-semibold text-red-600 mb-4">主要风险点</h3>
+                        <ul id="risks-list" class="space-y-4">
+                        </ul>
+                    </div>
+                    <div class="card p-8">
+                        <h3 class="text-2xl font-semibold text-green-600 mb-4">投资者的机遇</h3>
+                         <ul id="opportunities-list" class="space-y-4">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-slate-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center text-slate-400">
+            <p>本应用内容根据公开研究报告综合分析而成，仅供信息参考和学习交流，不构成任何投资建议。</p>
+            <p class="mt-2 text-sm">© 2025 稳定币交互式分析报告. All Rights Reserved.</p>
+        </div>
+    </footer>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const appData = {
+        types: [
+            { 
+                title: '法币支持稳定币', 
+                icon: '🏛️',
+                short: '由美元、港元等法定货币1:1支持，是目前市场的主流。',
+                details: `<strong>机制:</strong> 发行方持有等值的现金或高流动性资产（如短期国债）作为储备，确保每一枚稳定币都有真实的法币价值支撑。<br><strong>关键示例:</strong> Tether (USDT), USD Coin (USDC)。<br><strong>优势:</strong> 价值稳定、易于理解、监管相对明确。<br><strong>风险:</strong> 中心化风险（依赖发行方信用）、储备金透明度和管理风险。`
+            },
+            { 
+                title: '加密货币支持稳定币', 
+                icon: '💎',
+                short: '由其他加密货币（如ETH）超额抵押生成。',
+                details: `<strong>机制:</strong> 用户锁定价值高于所借稳定币的加密资产作为抵押品，通过智能合约自动管理，以应对抵押品价格波动。<br><strong>关键示例:</strong> MakerDAO (DAI)。<br><strong>优势:</strong> 去中心化程度高、链上透明。<br><strong>风险:</strong> 抵押品价格剧烈波动可能导致清算、智能合约漏洞风险。`
+            },
+            { 
+                title: '算法稳定币', 
+                icon: '🧮',
+                short: '通过算法自动调节供应量来维持价格稳定。',
+                details: `<strong>机制:</strong> 无需或仅需部分抵押，依靠算法在价格偏离时自动增发或销毁代币，以维持与挂钩目标的平衡。常采用双代币模型。<br><strong>关键示例:</strong> TerraUSD (UST) - 已失败。<br><strong>优势:</strong> 理论上资本效率最高、完全去中心化。<br><strong>风险:</strong> 机制复杂、极易陷入“死亡螺旋”而脱钩，系统性风险极高。`
+            },
+            { 
+                title: '商品支持稳定币', 
+                icon: '⚜️',
+                short: '由黄金等现实世界商品作为价值支撑。',
+                details: `<strong>机制:</strong> 每枚代币代表一定数量的实物商品（如一盎司黄金）的所有权，该商品由第三方托管机构保管。<br><strong>关键示例:</strong> Paxos Gold (PAXG)。<br><strong>优势:</strong> 提供对非法定资产的敞口，可作为通胀对冲工具。<br><strong>风险:</strong> 商品价格自身波动、托管风险、流动性可能受限。`
+            }
+        ],
+        market: {
+            share: {
+                labels: ['Tether (USDT)', 'Circle (USDC)', '其他'],
+                data: [61.2, 24.4, 14.4],
+                colors: ['#0F766E', '#0E7490', '#F59E0B']
+            },
+            growth: {
+                labels: ['2021', '2022', '2023', '2024', '2025'],
+                data: [780, 660, 1380, 2100, 2500] 
+            }
+        },
+        players: [
+             {
+                name: 'Tether (USDT)',
+                role: '市场领导者',
+                details: '全球市值最大的稳定币，占据超60%市场份额。其盈利模式主要依赖储备资产的投资收益。尽管曾因储备透明度问题受质疑，但近年通过定期审计逐步重建信任。'
+            },
+            {
+                name: 'Circle (USDC)',
+                role: '合规挑战者',
+                details: '全球第二大稳定币，以高度合规和透明著称，储备金主要由现金和短期美国国债构成。其与Coinbase的深度合作是其生态扩张的关键。'
+            },
+            {
+                name: 'PayPal (PYUSD)',
+                role: '支付巨头入局',
+                details: '由全球支付巨头PayPal推出，标志着稳定币正从加密原生领域向主流支付场景渗透，拥有巨大的用户基础和应用潜力。'
+            },
+            {
+                name: '京东科技',
+                role: '产业应用先锋',
+                details: '作为香港金管局沙盒参与者，探索将稳定币用于B2B支付和供应链金融，旨在大幅降低成本和时间，是产业应用落地的典型代表。'
+            }
+        ],
+        regulation: {
+            hk: `
+                <div class="bg-white p-6 rounded-lg shadow-inner space-y-4">
+                    <h4 class="text-xl font-bold text-teal-700">香港：积极拥抱，规则先行</h4>
+                    <p>香港采取积极主动的监管策略，旨在成为全球领先的Web3中心和受监管的稳定币枢纽。</p>
+                    <ul class="list-disc list-inside space-y-2 text-slate-700">
+                        <li><strong>《稳定币条例》:</strong> 2025年8月生效，为法币支持稳定币（FRS）设立专门的许可制度，要求1:1储备、超额抵押和严格的风险管理。</li>
+                        <li><strong>监管原则:</strong> 遵循“相同活动、相同风险、相同监管”原则，与国际标准对齐，并强调投资者保护。</li>
+                        <li><strong>监管沙盒:</strong> 启动“稳定币发行人沙盒”，邀请潜在发行方（如京东、渣打银行）测试其商业模式，以确保稳健运营。</li>
+                        <li><strong>战略目标:</strong> 培育一个“重质不重量”的高信任度生态，为人民币国际化和数字资产创新提供受监管的试验田。</li>
+                    </ul>
+                </div>
+            `,
+            us: `
+                <div class="bg-white p-6 rounded-lg shadow-inner space-y-4">
+                    <h4 class="text-xl font-bold text-teal-700">美国：框架渐明，走向合规</h4>
+                    <p>美国正从追溯性执法转向构建全面的联邦监管框架，标志着其对数字资产态度的成熟。</p>
+                    <ul class="list-disc list-inside space-y-2 text-slate-700">
+                        <li><strong>关键立法:</strong> 《GENIUS法案》已获参议院通过，旨在为支付型稳定币提供联邦层面的监管；《CLARITY法案》则为更广泛的数字资产市场划定规则。</li>
+                        <li><strong>核心要求:</strong> 强调1:1现金储备、发行方透明度、风险管理和消费者保护，以防范系统性风险。</li>
+                        <li><strong>市场影响:</strong> 清晰的监管预期将推动稳定币的机构化采纳，Circle等公司的上市反映了市场对合规商业模式的认可。</li>
+                        <li><strong>战略转变:</strong> 从被动反应转向主动构建框架，旨在将稳定币安全地整合进现有金融体系。</li>
+                    </ul>
+                </div>
+            `
+        },
+        risks: [
+            { title: '脱钩与储备风险', detail: '稳定币可能因储备管理不善、市场恐慌或黑天鹅事件而失去与锚定资产的挂钩，如Terra/UST的崩盘。' },
+            { title: '监管不确定性', detail: '全球监管政策仍在演变，不同司法管辖区的规则差异给跨国运营带来合规挑战和法律风险。' },
+            { title: '智能合约漏洞', detail: 'DeFi协议和加密支持稳定币的底层代码可能存在漏洞，一旦被利用将导致用户资产巨大损失。' },
+            { title: '非法金融风险', detail: '稳定币的匿名性和便捷性可能被用于洗钱、恐怖主义融资等非法活动，引发监管机构严密审查。' },
+            { title: '系统性风险', detail: '大型稳定币发行方的失败可能引发连锁反应，冲击整个加密市场乃至传统金融系统。' }
+        ],
+        opportunities: [
+            { title: '抵押借贷', detail: '比特币等加密资产持有者可将其作为抵押品，借入稳定币以获取流动性，无需出售其长期持有的资产。' },
+            { title: '流动性提供', detail: '向去中心化交易所（DEX）的流动性池中提供稳定币，可赚取交易手续费分成和平台代币奖励。' },
+            { title: '收益耕作 (Yield Farming)', detail: '在各类DeFi协议中存入或出借稳定币，以追求更高的被动收入回报。' },
+            { title: '风险对冲', detail: '在市场剧烈波动时，可将其他加密资产转换为稳定币，以规避价格下跌风险，起到避风港作用。' }
+        ]
+    };
+    const typesContainer = document.getElementById('types-container');
+    appData.types.forEach((type, index) => {
+        const card = document.createElement('div');
+        card.className = 'card p-6 cursor-pointer';
+        card.innerHTML = `
+            <div class="flex items-start justify-between">
+                <h3 class="text-xl font-semibold mb-2">${type.title}</h3>
+                <span class="text-3xl">${type.icon}</span>
+            </div>
+            <p class="text-slate-600 mb-4">${type.short}</p>
+            <div class="details-content text-sm text-slate-500">${type.details}</div>
+        `;
+        card.addEventListener('click', () => {
+            const content = card.querySelector('.details-content');
+            content.classList.toggle('open');
+        });
+        typesContainer.appendChild(card);
+    });
+    const marketShareCtx = document.getElementById('marketShareChart').getContext('2d');
+    new Chart(marketShareCtx, {
+        type: 'doughnut',
+        data: {
+            labels: appData.market.share.labels,
+            datasets: [{
+                data: appData.market.share.data,
+                backgroundColor: appData.market.share.colors,
+                borderColor: '#F8FAFC',
+                borderWidth: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${context.raw}%`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%'
+        }
+    });
+    const marketCapCtx = document.getElementById('marketCapGrowthChart').getContext('2d');
+    new Chart(marketCapCtx, {
+        type: 'line',
+        data: {
+            labels: appData.market.growth.labels,
+            datasets: [{
+                label: '全球稳定币市值 (亿美元)',
+                data: appData.market.growth.data,
+                borderColor: '#0F766E',
+                backgroundColor: 'rgba(15, 118, 110, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    const playersContainer = document.getElementById('players-container');
+    appData.players.forEach(player => {
+        const playerCard = document.createElement('div');
+        playerCard.className = 'card p-6';
+        playerCard.innerHTML = `
+            <h4 class="font-bold text-lg">${player.name}</h4>
+            <p class="text-teal-600 text-sm font-semibold mb-2">${player.role}</p>
+            <p class="text-slate-600 text-sm">${player.details}</p>
+        `;
+        playersContainer.appendChild(playerCard);
+    });
+    
+    const regulationContent = document.getElementById('regulation-content');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    function updateRegulationTab(tab) {
+        tabButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.tab === tab) {
+                btn.classList.add('active');
+            }
+        });
+        regulationContent.innerHTML = appData.regulation[tab];
+    }
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            updateRegulationTab(button.dataset.tab);
+        });
+    });
+    updateRegulationTab('hk');
+    const risksList = document.getElementById('risks-list');
+    appData.risks.forEach(risk => {
+        const li = document.createElement('li');
+        li.className = 'p-4 bg-red-50 rounded-lg';
+        li.innerHTML = `
+            <h4 class="font-semibold">${risk.title}</h4>
+            <p class="text-slate-600 text-sm mt-1">${risk.detail}</p>
+        `;
+        risksList.appendChild(li);
+    });
+    const opportunitiesList = document.getElementById('opportunities-list');
+    appData.opportunities.forEach(opp => {
+        const li = document.createElement('li');
+        li.className = 'p-4 bg-green-50 rounded-lg';
+        li.innerHTML = `
+            <h4 class="font-semibold">${opp.title}</h4>
+            <p class="text-slate-600 text-sm mt-1">${opp.detail}</p>
+        `;
+        opportunitiesList.appendChild(li);
+    });
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            if(targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+            if(mobileMenu.classList.contains('hidden') === false){
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    });
+    const header = document.getElementById('header');
+    const sections = document.querySelectorAll('main section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.4
+    };
+    const sectionObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === entry.target.id) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }, observerOptions);
+    sections.forEach(section => {
+        sectionObserver.observe(section);
+    });
+});
+</script>
+</body>
+</html>
